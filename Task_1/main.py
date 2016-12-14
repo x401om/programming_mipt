@@ -35,6 +35,15 @@ def cutoffDecimalsIfNeeded(value):
     else:
         return value
 
+def wrapStringToQuotesIfNeeded(value):
+    if isinstance(value, str):
+        value = basicTypeFromString(value)
+        if isinstance(value, str):
+            value = '"{0}"'.format(value)
+        else:
+            value = str(value)
+    return value
+
 def isBasicExpression(string):
     tokens = re.split(REFERENCE_REGEX, string[1:])[1:-1]
     return len(tokens) == 0
@@ -73,12 +82,7 @@ def replaceReferencesInTable(table):
                         if pattern.match(token):  # This is a link
                             link = tableCoordinateForLink(token)
                             referenceValue = str(table[link[0]][link[1]])
-                            if isinstance(referenceValue, str):
-                                referenceValue = basicTypeFromString(referenceValue)
-                                if isinstance(referenceValue, str):
-                                    referenceValue = '"{0}"'.format(referenceValue)
-                                else:
-                                    referenceValue = str(referenceValue)
+                            referenceValue = wrapStringToQuotesIfNeeded(referenceValue)
                             value = value.replace(token, referenceValue)
                     value = evaluateBasicExpression(value[1:])
                     table[i][j] = cutoffDecimalsIfNeeded(value)
@@ -91,7 +95,6 @@ if len(sys.argv) > 3:
     extraFunctionsFilePath = sys.argv[3]
     with open(extraFunctionsFilePath, 'r') as functions:
         exec(functions.read())
-
 
 table = loadTableFromFile(inputFilePath)
 table = replaceBasicTypesAndExpressionsInTable(table)
