@@ -29,7 +29,6 @@ def basicTypeFromString(s):
         except ValueError:
             return s
 
-# Функция округляет float
 def cutoffDecimalsIfNeeded(value):
     if isinstance(value, float):
         return float(str('{0:.5f}'.format(value)))
@@ -40,11 +39,12 @@ def isBasicExpression(string):
     tokens = re.split(REFERENCE_REGEX, string[1:])[1:-1]
     return len(tokens) == 0
 
-# Функция выдает результат вычисления выражения (формулы)
+# This function evaluates the expression (function)
 def evaluateBasicExpression(expression):
     return eval(expression)
 
-# Функция заменяет простые строчки на простые типы int и float, если в ячейке формула без ссылок или число
+# Replaces basic strings with basic types as int or float
+# if there is basic fromula without references or number
 def replaceBasicTypesAndExpressionsInTable(table):
     for i in range(0, len(table)):
         for j in range(0, len(table[i])):
@@ -56,11 +56,11 @@ def replaceBasicTypesAndExpressionsInTable(table):
                 table[i][j] = basicTypeFromString(value)
     return table
 
-# Функция выдает координаты ячейки по ее идентификатору (e.g. А1 = 0,0, B1 = 0,1 ...)
+# Calculates the coordinates of cell from its id
 def tableCoordinateForLink(string):
     return (basicTypeFromString(string[1:]) - 1, ord(string[0]) - ord('A'))
 
-# Функция превращает формулы со ссылками в обычные и считает их
+# Converts formulas with references to basics and calculates them
 def replaceReferencesInTable(table):
     pattern = re.compile(REFERENCE_REGEX)
     for i in range(0, len(table)):
@@ -68,14 +68,14 @@ def replaceReferencesInTable(table):
             value = table[i][j]
             if isinstance(value, str):
                 tokens = re.split(REFERENCE_REGEX, value[1:])[1:-1]
-                if len(tokens) > 0 :
+                if len(tokens) > 0:
                     for token in tokens:
-                        if pattern.match(token):  # Это ссылка
+                        if pattern.match(token):  # This is a link
                             link = tableCoordinateForLink(token)
                             referenceValue = str(table[link[0]][link[1]])
                             value = value.replace(token, referenceValue)
                     value = evaluateBasicExpression(value[1:])
-                    table[i][j] =  cutoffDecimalsIfNeeded(value)
+                    table[i][j] = cutoffDecimalsIfNeeded(value)
     return table
 
 inputFilePath = sys.argv[1]
