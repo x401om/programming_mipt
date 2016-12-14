@@ -1,8 +1,9 @@
 import sys
 import csv
 import re
+from math import *
 
-REFERENCE_REGEX = r'([A-Z][0-9]+)'
+REFERENCE_REGEX = r'(\w\d+)'
 
 def loadTableFromFile(filePath):
     table = []
@@ -27,6 +28,13 @@ def basicTypeFromString(s):
             return float(s)
         except ValueError:
             return s
+
+# Функция округляет float
+def cutoffDecimalsIfNeeded(value):
+    if isinstance(value, float):
+        return float(str('{0:.5f}'.format(value)))
+    else:
+        return value
 
 def isBasicExpression(string):
     tokens = re.split(REFERENCE_REGEX, string[1:])[1:-1]
@@ -59,31 +67,20 @@ def replaceReferencesInTable(table):
         for j in range(0, len(table[i])):
             value = table[i][j]
             if isinstance(value, str):
-                exp = []
                 tokens = re.split(REFERENCE_REGEX, value[1:])[1:-1]
                 if len(tokens) > 0 :
                     for token in tokens:
                         if pattern.match(token):  # Это ссылка
                             link = tableCoordinateForLink(token)
-                            exp.append(str(table[link[0]][link[1]]))
-                        else:
-                            exp.append(token)
-                    exp = ''.join(exp)
-                    table[i][j] = evaluateBasicExpression(exp)
-    return table
-
-
-def computedTableFromTable(table):
-    for i in range(0, len(table)):
-        for j in range(0, len(table[i])):
-            value = table[i][j]
-            if isinstance(value, str):
-                table[i][j] = evaluateBasicExpression(value[1:])
+                            referenceValue = str(table[link[0]][link[1]])
+                            value = value.replace(token, referenceValue)
+                    value = evaluateBasicExpression(value[1:])
+                    table[i][j] =  cutoffDecimalsIfNeeded(value)
     return table
 
 inputFilePath = sys.argv[1]
 outputFilePath = sys.argv[2]
 table = loadTableFromFile(inputFilePath)
 table = replaceBasicTypesAndExpressionsInTable(table)
-saveTableToFilePath(table, outputFilePath)
 table = replaceReferencesInTable(table)
+saveTableToFilePath(table, outputFilePath)
